@@ -1,6 +1,7 @@
 import prisma from "../../database/config";
 import express from "express";
 import bcrypt from "bcrypt";
+import { Role } from "@prisma/client";
 
 export const controller = async (
   req: express.Request,
@@ -8,22 +9,32 @@ export const controller = async (
   next: express.NextFunction
 ) => {
   try {
-    const { email, password, firstName, lastName } = req.body as {
+    let { email, password, role } = req.body as {
       email: string;
       password: string;
-      firstName: string;
-      lastName: string;
+      role: Role;
     };
+
+    if (!email) {
+      throw new Error("Email is required");
+    }
+
+    if (!password) {
+      throw new Error("Password is required");
+    }
+
+    if (!role) {
+      role = "BUYER";
+    }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const buyer = await prisma.customer.create({
       data: {
-        firstName,
-        lastName,
         email,
         password: hashedPassword,
+        role,
       },
     });
 

@@ -1,4 +1,4 @@
-import { raw } from "./mockSeller";
+import { raw } from "./mock";
 import bcrypt from "bcrypt";
 import { prisma } from "./src";
 
@@ -14,7 +14,7 @@ async function main() {
     })
   );
 
-  await prisma.merchant.createMany({
+  await prisma.customer.createMany({
     data: hashed,
     skipDuplicates: true,
   });
