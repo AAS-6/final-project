@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id                        String    @id @default(cuid())
+  firstName                 String
+  lastName                  String
+  email                     String    @unique
+  password                  String
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  accessTokens              String?
+  forgotPasswordAccessToken Float?
+  forgotPasswordExpireIn    DateTime?
+  merchant                  Merchant?
+  role                      Role      @default(CUSTOMER)
+}
+
+model Merchant {
+  id                        String    @id @default(cuid())
+  email                     String    @unique
+  password                  String
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+  accessTokens              String?
+  forgotPasswordAccessToken Float?
+  forgotPasswordExpireIn    DateTime?
+  username                  String
+  customer                  Customer  @relation(fields: [customerId], references: [id])
+  customerId                String    @unique
+}
+
+enum Role {
+  CUSTOMER
+  MERCHANT
+}
