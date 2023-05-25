@@ -2,6 +2,8 @@ import prisma from "../../database/config";
 import express from "express";
 import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
+import jwt from "jsonwebtoken";
+import { BadRequestError } from "../../error";
 
 export const controller = async (
   req: express.Request,
@@ -16,11 +18,11 @@ export const controller = async (
     };
 
     if (!email) {
-      throw new Error("Email is required");
+      throw new BadRequestError("Email is required");
     }
 
     if (!password) {
-      throw new Error("Password is required");
+      throw new BadRequestError("Password is required");
     }
 
     if (!role) {
@@ -30,15 +32,41 @@ export const controller = async (
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const buyer = await prisma.customer.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role,
-      },
-    });
+    try {
+      const buyer = await prisma.customer.create({
+        data: {
+          email,
+          password: hashedPassword,
+          role,
+        },
+      });
 
-    res.status(200).json(buyer);
+      const payload = {
+        id: buyer.id,
+        email: buyer.email,
+        role: buyer.role,
+      };
+
+      const token = jwt.sign(payload, process.env.JWT_SECRET as string, {
+        expiresIn: "1d",
+      });
+
+      res.cookie("token", token, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      res.status(201).json({
+        message: "Sign up successfully",
+        data: {
+          token,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === "P2002") {
+        throw new BadRequestError("Email already exists");
+      }
+    }
   } catch (error) {
     next(error);
   }

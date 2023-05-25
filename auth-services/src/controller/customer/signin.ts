@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import prisma from "../../database/config";
 import express from "express";
 import jwt from "jsonwebtoken";
+import { UnaunthenticatedError } from "../../error";
 
 export async function controller(
   req: express.Request,
@@ -14,6 +15,10 @@ export async function controller(
       password: string;
     };
 
+    if (!email || !password) {
+      throw new UnaunthenticatedError("Please provide email and password");
+    }
+
     const buyer = await prisma.customer.findUnique({
       where: {
         email,
@@ -21,13 +26,13 @@ export async function controller(
     });
 
     if (!buyer) {
-      throw new Error("Invalid email or password");
+      throw new UnaunthenticatedError("Email not found");
     }
 
     const isMatch = await bcrypt.compare(password, buyer.password);
 
     if (!isMatch) {
-      throw new Error("Invalid email or password");
+      throw new UnaunthenticatedError("Password is incorrect");
     }
 
     const payload = {
