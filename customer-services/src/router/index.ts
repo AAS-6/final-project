@@ -4,7 +4,7 @@ import customerRouter from "./customer-router";
 
 const router = express.Router();
 
-router.get("/merchant", merchantRouter);
-router.get("/customer", customerRouter);
+router.use("/merchant", merchantRouter);
+router.use("/customer", customerRouter);
 
 export default router;

@@ -13,20 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(xss());
 
-app.use(
-  "/api/v1",
-  (req, res, next) => {
-    console.log("Hello world");
-    next();
-  },
-  auth,
-  router
-);
-
-// app.use("/api/v1", router);
-app.use("/", auth, (req, res) => {
-  res.send("Welcome to customer services");
-});
+app.use("/api/v1", auth, router);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

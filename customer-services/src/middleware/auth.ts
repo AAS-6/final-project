@@ -1,5 +1,4 @@
 import { CustomAPIError, UnauthenticatedError } from "../error";
-import axios from "axios";
 import { Request, Response, NextFunction } from "express";
 
 const auth = async (req: Request, res: Response, next: NextFunction) => {
@@ -27,6 +26,8 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     const data = await response.json();
     if (!data.error) {
+      console.log(data);
+      req.body.id = data.userid;
       next();
     } else {
       throw new CustomAPIError("Something went wrong", 500);
