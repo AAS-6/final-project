@@ -1,0 +1,30 @@
+services:
+  nginx:
+    image: nginx
+    volumes:
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 8080:80
+
+  pgdb:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=postgres
+
+  auth-service:
+    build:
+      context: ./auth-services
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://posgtres:postgres@pgdb/aas
+      - JWT_SECRET=testingsecretlksajdlkajdadadsljdalsakdj
+
+  customer-service:
+    build:
+      context: ./customer-services
+      dockerfile: Dockerfile
+
+  product-service:
+    build:
+      context: ./product-services
+      dockerfile: Dockerfile
