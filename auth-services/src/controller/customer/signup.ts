@@ -11,9 +11,11 @@ export const controller = async (
   next: express.NextFunction
 ) => {
   try {
-    let { email, password, role } = req.body as {
+    let { email, password, role, firstName, lastName } = req.body as {
       email: string;
       password: string;
+      firstName: string;
+      lastName: string;
       role: Role;
     };
 
@@ -29,10 +31,20 @@ export const controller = async (
       role = "BUYER";
     }
 
+    if (!firstName || !lastName) {
+      throw new BadRequestError("First name and last name are required");
+    }
+
+    if (password.length < 6) {
+      throw new BadRequestError("Password must have at least 6 characters");
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
     try {
+      // const response = await fetch("http://localhost:3000/api/v1/
+      
       const buyer = await prisma.customer.create({
         data: {
           email,

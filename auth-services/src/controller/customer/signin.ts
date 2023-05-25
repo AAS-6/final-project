@@ -38,7 +38,7 @@ export async function controller(
     const payload = {
       id: buyer.id,
       email: buyer.email,
-      role: "buyer",
+      role: buyer.role,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET as string, {

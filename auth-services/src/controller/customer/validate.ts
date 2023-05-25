@@ -34,9 +34,8 @@ export async function controller(
     res.status(200).json({
       message: "Validation success",
       error: false,
-      data: {
-        token,
-      },
+      userid: payload.id,
+      role: payload.role,
     });
   } catch (error) {
     next(error);
