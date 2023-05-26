@@ -9,16 +9,17 @@ export async function controller(
   next: express.NextFunction
 ) {
   const authHeader = req.headers.authorization;
-  if (!authHeader) {
-    throw new UnaunthenticatedError("No auth header");
-  }
-
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    throw new UnaunthenticatedError("No token");
-  }
 
   try {
+    if (!authHeader) {
+      throw new UnaunthenticatedError("No auth header");
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      throw new UnaunthenticatedError("No token");
+    }
+
     const payload: any = jwt.verify(token, process.env.JWT_SECRET as string);
 
     const buyer = await prisma.customer.findUnique({

@@ -3,6 +3,7 @@ import prisma from "../../database/config";
 import jwt from "jsonwebtoken";
 import { BadRequestError, UnaunthenticatedError } from "../../error";
 import { Role } from "@prisma/client";
+import axios from "axios";
 
 export async function controller(
   req: express.Request,
@@ -10,20 +11,19 @@ export async function controller(
   next: express.NextFunction
 ) {
   const authHeader = req.headers.authorization;
-  const { role } = req.body as {
-    role: Role;
-  };
-
-  if (!authHeader) {
-    throw new UnaunthenticatedError("No auth header");
-  }
-
-  const token = authHeader.split(" ")[1];
-  if (!token) {
-    throw new UnaunthenticatedError("No token");
-  }
+  let role: Role | undefined;
 
   try {
+    if (!authHeader) {
+      throw new UnaunthenticatedError("No auth header");
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      throw new UnaunthenticatedError("No token");
+    }
+
     const payload: any = jwt.verify(token, process.env.JWT_SECRET as string);
 
     const buyer = await prisma.customer.findUnique({
@@ -36,38 +36,60 @@ export async function controller(
       throw new UnaunthenticatedError("Invalid token");
     }
 
-    if (!role) {
-        throw new BadRequestError("New Role is required, please provide new role to update. Available roles: 'BUYER', 'SELLER'"); 
-    }
-
     // update role
-    const updatedBuyer = await prisma.customer.update({
-      where: {
-        id: payload.id,
-      },
-      data: {
-        role,
-        updatedAt: new Date(),
-      },
-    });
+    await axios
+      .put(
+        "http://localhost:3001/api/v1/update-role",
+        {},
+        {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      .then(async response => {
+        const { data } = response;
+        console.log(data);
 
-    const newPayload = {
-      id: updatedBuyer.id,
-      email: updatedBuyer.email,
-      role: updatedBuyer.role,
-    };
+        if (data) {
+          console.log(data);
+          const updatedBuyer = await prisma.customer.update({
+            where: {
+              id: payload.id,
+            },
+            data: {
+              role: buyer.role === Role.BUYER ? Role.SELLER : Role.BUYER,
+              updatedAt: new Date(),
+            },
+          });
 
-    const newToken = jwt.sign(newPayload, process.env.JWT_SECRET as string, {
-      expiresIn: "1d",
-    });
+          const newPayload = {
+            id: updatedBuyer.id,
+            email: updatedBuyer.email,
+            role: updatedBuyer.role,
+          };
 
-    res.status(200).json({
-      message: "Update success",
-      error: false,
-      data: {
-        token: newToken,
-      },
-    });
+          const newToken = jwt.sign(
+            newPayload,
+            process.env.JWT_SECRET as string,
+            {
+              expiresIn: "1d",
+            }
+          );
+
+          res.status(200).json({
+            message: "Update success",
+            error: false,
+            data: {
+              newToken,
+            },
+          });
+        }
+      })
+      .catch(error => {
+        const newError = new BadRequestError(error.response.data.msg);
+        throw newError;
+      });
   } catch (error) {
     next(error);
   }

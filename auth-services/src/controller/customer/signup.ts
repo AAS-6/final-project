@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { Role } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import { BadRequestError } from "../../error";
+import axios from "axios";
 
 export const controller = async (
   req: express.Request,
@@ -43,13 +44,26 @@ export const controller = async (
     const hashedPassword = await bcrypt.hash(password, salt);
 
     try {
-      // const response = await fetch("http://localhost:3000/api/v1/
-      
+      const registerUser = await axios.post(
+        `http://localhost:3001/api/v1/register`,
+        {
+          userid: email,
+          firstName,
+          lastName,
+          role,
+        }
+      );
+
+      if (!registerUser.data) {
+        throw new BadRequestError("Cannot register user");
+      }
+
       const buyer = await prisma.customer.create({
         data: {
           email,
           password: hashedPassword,
           role,
+          id: registerUser.data.data.id,
         },
       });
 
@@ -77,6 +91,8 @@ export const controller = async (
     } catch (error: any) {
       if (error.code === "P2002") {
         throw new BadRequestError("Email already exists");
+      } else {
+        next(error);
       }
     }
   } catch (error) {
