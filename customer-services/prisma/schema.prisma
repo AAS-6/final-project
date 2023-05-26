@@ -14,14 +14,15 @@ model Customer {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   address   Address?
-  whislits  Whislist?
+  whislist  Whislist?
 }
 
 model Merchant {
   id        String   @id @default(cuid())
-  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  firstName String
+  lastName  String
   profile   Profile?
 }
 
@@ -44,14 +45,17 @@ model Profile {
 
 model Address {
   id         String    @id @default(cuid())
-  detail     String
+  detail     String?
   city       String
-  state      String
   zip        String
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   customerId String?   @unique
   profileId  String?   @unique
+  province   String
+  country    String    @default("Indonesia")
+  district   String
+  village    String
   Customer   Customer? @relation(fields: [customerId], references: [id])
   profile    Profile?  @relation(fields: [profileId], references: [id])
 }

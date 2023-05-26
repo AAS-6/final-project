@@ -13,7 +13,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(helmet());
 app.use(xss());
 
-app.use("/api/v1", auth, router);
+app.use("/api/v1", router);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

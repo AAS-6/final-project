@@ -1,8 +1,9 @@
 import { CustomAPIError, UnauthenticatedError } from "../error";
 import { Request, Response, NextFunction } from "express";
+// import { instance } from "../axios/config";
+import axios from "axios";
 
 const auth = async (req: Request, res: Response, next: NextFunction) => {
-  // check header
   const authHeader = req.headers.authorization;
 
   try {
@@ -10,28 +11,27 @@ const auth = async (req: Request, res: Response, next: NextFunction) => {
       throw new UnauthenticatedError("Authentication invalid");
     }
 
+    req.body.userid = "";
+
     const token = authHeader.split(" ")[1];
 
-    const response = await fetch("http://localhost:3000/api/v1/validate", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    axios
+      .get("http://localhost:3000/api/v1/validate", {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      })
+      .then(response => {
+        const { data } = response;
 
-    if (!response.ok) {
-      throw new UnauthenticatedError("Authentication invalid");
-    }
-
-    const data = await response.json();
-    if (!data.error) {
-      console.log(data);
-      req.body.id = data.userid;
-      next();
-    } else {
-      throw new CustomAPIError("Something went wrong", 500);
-    }
+        req.body.userid = data.userid;
+        req.body.role = data.role;
+        next();
+      })
+      .catch(error => {
+        const customError = new UnauthenticatedError("Authentication invalid");
+        next(customError);
+      });
   } catch (error) {
     next(error);
   }
