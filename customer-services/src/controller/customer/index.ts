@@ -1,6 +1,8 @@
 import express from "express";
 import prisma from "../../database/config";
 import { Address } from "@prisma/client";
+import { CustomAPIError } from "../../error";
+import { HttpStatusCode } from "axios";
 
 export const createAddress = async (
   req: express.Request,
@@ -16,7 +18,10 @@ export const createAddress = async (
     validateAddress(address);
 
     if (role !== "BUYER") {
-      throw new Error("Only buyer can create address in this endpoint");
+      throw new CustomAPIError(
+        "Only buyer can create address in this endpoint",
+        HttpStatusCode.Forbidden
+      );
     }
 
     const newCustomerAddress = await prisma.customer.update({
@@ -60,7 +65,10 @@ export const updateAddress = async (
     }: { userid: string; address: Address; role: string } = req.body;
 
     if (role !== "BUYER") {
-      throw new Error("Only buyer can update address in this endpoint");
+      throw new CustomAPIError(
+        "Only buyer can update address in this endpoint",
+        HttpStatusCode.Forbidden
+      );
     }
 
     const updatedCustomerAddress = await prisma.customer.update({
@@ -97,13 +105,13 @@ export const deleteAddress = async (
   next: express.NextFunction
 ) => {
   try {
-    const {
-      userid,
-      role,
-    }: { userid: string; role: string } = req.body;
+    const { userid, role }: { userid: string; role: string } = req.body;
 
     if (role !== "BUYER") {
-      throw new Error("Only buyer can delete address in this endpoint");
+      throw new CustomAPIError(
+        "Only buyer can delete address in this endpoint",
+        HttpStatusCode.Forbidden
+      );
     }
 
     const deletedCustomerAddress = await prisma.customer.update({
@@ -153,6 +161,195 @@ export const getAddress = async (
   }
 };
 
+export const createRating = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  try {
+    const {
+      userid,
+      rating,
+      merchantId,
+      role,
+    }: { userid: string; rating: number; role: string; merchantId: string } =
+      req.body;
+
+    if (role !== "BUYER") {
+      throw new CustomAPIError(
+        "Only buyer can create rating in this endpoint",
+        HttpStatusCode.Forbidden
+      );
+    }
+
+    if (!rating || !merchantId) {
+      throw new Error("Rating and merchantId are required");
+    }
+
+    const newCustomerRating = await prisma.customer.update({
+      where: {
+        id: userid,
+      },
+      data: {
+        Rating: {
+          create: {
+            id: merchantId + userid,
+            rating: rating,
+            merchant: {
+              connect: {
+                id: merchantId,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      message: "Success create rating",
+      data: newCustomerRating,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateRating = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  try {
+    const {
+      userid,
+      rating,
+      merchantId,
+      role,
+    }: { userid: string; rating: number; role: string; merchantId: string } =
+      req.body;
+
+    if (role !== "BUYER") {
+      throw new CustomAPIError(
+        "Only buyer can update rating in this endpoint",
+        HttpStatusCode.Forbidden
+      );
+    }
+
+    if (!rating || !merchantId) {
+      throw new Error("Rating and merchantId are required");
+    }
+
+    const updatedCustomerRating = await prisma.customer.update({
+      where: {
+        id: userid,
+      },
+      data: {
+        Rating: {
+          update: {
+            where: {
+              id: merchantId + userid,
+            },
+            data: {
+              rating: rating,
+            },
+          },
+        },
+      },
+    });
+
+    res.status(200).json({
+      message: "Success update rating",
+      data: updatedCustomerRating,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteRating = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  try {
+    const {
+      userid,
+      merchantId,
+      role,
+    }: { userid: string; role: string; merchantId: string } = req.body;
+
+    if (role !== "BUYER") {
+      throw new CustomAPIError(
+        "Only buyer can delete rating in this endpoint",
+        HttpStatusCode.Forbidden
+      );
+    }
+
+    if (!merchantId) {
+      throw new Error("MerchantId are required");
+    }
+
+    const deletedCustomerRating = prisma.customer.update({
+      where: {
+        id: userid,
+      },
+      data: {
+        Rating: {
+          disconnect: {
+            id: merchantId + userid,
+          },
+        },
+      },
+    });
+
+    const deletedRating = prisma.rating.delete({
+      where: {
+        id: merchantId + userid,
+      },
+    });
+
+    await prisma.$transaction([deletedCustomerRating, deletedRating]);
+
+    res.status(200).json({
+      message: "Success delete rating",
+      data: deletedCustomerRating,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRating = async (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+) => {
+  try {
+    const { userid }: { userid: string } = req.body;
+
+    const customerRating = await prisma.customer.findUnique({
+      where: {
+        id: userid,
+      },
+      select: {
+        Rating: true,
+      },
+    });
+
+    res.status(200).json({
+      message: "Success get rating",
+      data: customerRating,
+    });
+
+    res.status(200).json({
+      message: "Success get rating",
+      data: customerRating,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const validateAddress = (address: Address) => {
   if (!address) {
     throw new Error("Address are required");
@@ -177,4 +374,4 @@ const validateAddress = (address: Address) => {
   if (!address.zip) {
     throw new Error("Zip are required");
   }
-};  
+};

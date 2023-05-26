@@ -14,6 +14,7 @@ model Customer {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   address   Address?
+  Rating    Rating[]
   whislist  Whislist?
 }
 
@@ -24,23 +25,25 @@ model Merchant {
   firstName String
   lastName  String
   profile   Profile?
+  Rating    Rating[]
 }
 
 model Profile {
-  id          String           @id @default(cuid())
-  name        String
-  bio         String
-  headerImage String
-  followers   Int
-  following   Int
-  rating      Float
-  lastActive  DateTime
-  category    MerchantCategory
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  merchantId  String           @unique
-  address     Address?
-  merchant    Merchant         @relation(fields: [merchantId], references: [id])
+  id           String           @id @default(cuid())
+  bio          String
+  headerImage  String?
+  followers    Int              @default(0)
+  following    Int              @default(0)
+  rating       Float            @default(0)
+  lastActive   DateTime         @default(now())
+  category     MerchantCategory
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  merchantId   String           @unique
+  merchantName String
+  ratingCount  Int              @default(0)
+  address      Address?
+  merchant     Merchant         @relation(fields: [merchantId], references: [id])
 }
 
 model Address {
@@ -70,18 +73,20 @@ model Whislist {
   Customer   Customer @relation(fields: [customerId], references: [id])
 }
 
+model Rating {
+  id         String   @id @default(cuid())
+  rating     Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  customerId String
+  merchantId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+}
+
 enum MerchantCategory {
-  FOOD
-  FASHION
-  ELECTRONIC
-  HEALTH
-  BEAUTY
-  HOME
-  SPORT
-  TRAVEL
-  ENTERTAINMENT
-  EDUCATION
-  FINANCE
-  AUTOMOTIVE
-  OTHER
+  GENERAL
+  SMARTPHONE
+  LAPTOP
+  ACCESSORIES
 }

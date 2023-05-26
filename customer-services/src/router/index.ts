@@ -8,8 +8,8 @@ import auth from "../middleware/auth";
 const router = express.Router();
 
 router.use("/merchant", merchantRouter);
-router.use("/customer", auth, customerRouter);
-router.put("/update-role", auth, updateRoleController);
+router.use("/customer", customerRouter);
+router.put("/update-role", updateRoleController);
 router.post("/register", registerController);
 
 export default router;

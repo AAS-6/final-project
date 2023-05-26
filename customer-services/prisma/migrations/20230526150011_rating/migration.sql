@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Profile" ADD COLUMN     "ratingCount" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "followers" SET DEFAULT 0,
+ALTER COLUMN "following" SET DEFAULT 0,
+ALTER COLUMN "rating" SET DEFAULT 0;
